@@ -1,8 +1,10 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.generics import get_object_or_404
-from .models import Questionnaire, Choice, Question
-from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSerializer
+from .models import Questionnaire, Choice, Question, Answer
+from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSerializer, AnswerOneTextSerializer, \
+    AnswerOneChoiceSerializer, AnswerMultipleChoiceSerializer, AnswerSerializer, UserQuestionnaireSerializer
+from django.db.models import Q
 
 
 class PermissionMixin:
@@ -50,4 +52,42 @@ class ChoiceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         question = get_object_or_404(Question, id=self.kwargs['question_pk'])
         return question.choices.all()
+
+
+class AnswerCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
+    queryset = Answer.objects.all()
+    serializer_class = AnswerSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_serializer_class(self):
+        question = get_object_or_404(
+            Question,
+            pk=self.kwargs['question_pk'],
+            questionnaire__id=self.kwargs['id'],
+        )
+        if question.question_type == 'text_field':
+            return AnswerOneTextSerializer
+        elif question.question_type == 'radio':
+            return AnswerOneChoiceSerializer
+        else:
+            return AnswerMultipleChoiceSerializer
+
+    def perform_create(self, serializer):
+        question = get_object_or_404(
+            Question,
+            pk=self.kwargs['question_pk'],
+            questionnaire__id=self.kwargs['id'],
+        )
+        serializer.save(author=self.request.user, question=question)
+
+
+class UserIdQuestionnaireListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    serializer_class = UserQuestionnaireSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        queryset = Questionnaire.objects.exclude(~Q(questions__answers__author__id=user_id))
+        return queryset
+
 
