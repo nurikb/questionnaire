@@ -30,3 +30,15 @@ class Question(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class Choice(models.Model):
+    name = models.TextField(verbose_name='Вариант ответа')
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="choices"
+    )
+
+    def __str__(self):
+        return self.name
