@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, generics
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.generics import get_object_or_404
 from .models import Questionnaire, Choice, Question
 from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSerializer
@@ -7,12 +8,17 @@ from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSeri
 class QuestionnaireViewSet(viewsets.ModelViewSet):
     queryset = Questionnaire.objects.all()
     serializer_class = QuestionnaireSerializer
-    # permission_classes = (permissions.IsAdminUser,)
+
+    def get_permissions(self):
+        if self.action in [ 'list']:
+            self.permission_classes = [AllowAny, ]
+        elif self.action in ['create', 'destroy', 'update']:
+            self.permission_classes = [IsAdminUser, ]
+        return super().get_permissions()
 
 
 class QuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
-    # permission_classes = (permissions.IsAdminUser,)
 
     def get_queryset(self):
         questionnaire = get_object_or_404(Questionnaire, id=self.kwargs['id'])
@@ -22,11 +28,18 @@ class QuestionViewSet(viewsets.ModelViewSet):
         questionnaire = get_object_or_404(Questionnaire, pk=self.kwargs['id'])
         serializer.save(questionnaire=questionnaire)
 
+    def get_permissions(self):
+        if self.action in ['list']:
+            self.permission_classes = [AllowAny, ]
+        elif self.action in ['create', 'destroy', 'update']:
+            self.permission_classes = [IsAdminUser, ]
+        return super().get_permissions()
+
 
 class ChoiceViewSet(viewsets.ModelViewSet):
     queryset = Choice.objects.all()
     serializer_class = ChoiceSerializer
-    # permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (IsAdminUser,)
 
     def perform_create(self, serializer):
         question = get_object_or_404(
