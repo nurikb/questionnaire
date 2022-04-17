@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/questionnaire
+      - ./static:/static
+    ports:
+      - 8000:8000
+#    expose:
+#      - "8000"
+    env_file:
+      - .env
+    restart: "on-failure"
+    depends_on:
+      - db
+    networks:
+      - questionnaire-network
+
+  db:
+    image: postgres:10.5-alpine
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASS=${POSTGRES_PASS}
+      - POSTGRES_DBNAME=${POSTGRES_DBNAME}
+    restart: "on-failure"
+    networks:
+      questionnaire-network:
+
+volumes:
+  postgres_data:
+
+networks:
+  questionnaire-network:
+    driver: bridge
