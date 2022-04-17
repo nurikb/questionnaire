@@ -1,0 +1,912 @@
+openapi: 3.0.2
+info:
+  title: 'Poll API'
+  version: ''
+  description: |
+    запросы к API начинаются с `/api/`
+
+    # Описание
+    API для системы опросов пользователей
+    
+    # Алгоритм регистрации пользователей
+    1. Пользователь отправляет запрос с параметрами `username` и `password` на `api/auth/users/`
+
+    # Алгоритм авторизации пользователей
+    1. Пользователь отправляет запрос с параметрами `username` и `password` на `/auth/token/login`, в ответе на запрос ему приходит `token` в поле access.
+    2. При отправке запроса передавайте токен в заголовке Authorization: Token <токен>
+
+    # Пользовательские роли
+    - **Администратор** — добавление/изменение/удаление опросов и вопросов к ним.
+    - **Аутентифицированный пользователь** — получение списка активных опросов, прохождение опроса: опросы можно проходить анонимно, в качестве идентификатора пользователя в API передаётся числовой ID, по которому сохраняются ответы пользователя на вопросы; один пользователь может участвовать в любом количестве опросов получение пройденных пользователем опросов с детализацией по ответам (что выбрано) по ID уникальному пользователя
+
+tags:
+  - name: QUESTIONNAIRE
+    description: Опросы
+  - name: QUESTIONS
+    description: Вопросы
+  - name: CHOICES
+    description: Варианты ответов
+  - name: ANSWERS
+    description: Ответы
+
+paths:
+  /api/questionnaire/:
+    get:
+      tags:
+        - QUESTIONNAIRE
+      description: |
+        Получить список всех опросов.
+
+      responses:
+        200:
+          description: Список опросов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    date_start:
+                      type: date
+                      example: 2019-12-23
+                    date_end:
+                      type: date
+                      example: 2019-12-23
+                    description:
+                      type: string
+    post:
+      tags:
+        - QUESTIONNAIRE
+      description: |
+        Создать новый опрос.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                date_end:
+                  type: date
+                  example: 2019-12-23
+                description:
+                  type: string
+      responses:
+        200:
+          description: 'Новый опрос'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    date_start:
+                      type: date
+                      example: 2019-12-23
+                    date_end:
+                      type: date
+                      example: 2019-12-23
+                    description:
+                      type: string
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+
+      security:
+      - token:
+        - admin
+  /api/questionnaire/<questionnaire_id>/:
+    put:
+      tags:
+        - QUESTIONNAIRE
+      description: |
+        Изменить опрос.
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID  опроса
+          schema:
+            type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                date_start:
+                  type: date
+                date_end:
+                  type: date
+                description:
+                  type: string
+      responses:
+        200:
+          description: 'Измененный опрос'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    date_start:
+                      type: date
+                      example: 2019-12-23
+                    date_end:
+                      type: date
+                      example: 2019-12-23
+                    description:
+                      type: string
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+      - token:
+        - admin
+    delete:
+      tags:
+        - QUESTIONNAIRE
+      description: |
+        Удалить опрос.
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID  опроса
+          schema:
+            type: number
+      responses:
+        200:
+          description: ' Удаленный опрос'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    date_start:
+                      type: date
+                      example: 2019-12-23
+                    date_end:
+                      type: date
+                      example: 2019-12-23
+                    description:
+                      type: string
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+        - token:
+            - admin
+  /api/questionnaire/<questionnaire_id>/questions/:
+    get:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+      tags:
+        - QUESTIONS
+      description: |
+        Получить список всех вопросов в опросе.
+
+      responses:
+        200:
+          description: Список вопросов в опросе
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    text:
+                      type: string
+                    question_type:
+                      type: string
+                    questionnaire:
+                      type: number
+    post:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+      tags:
+        - QUESTIONS
+      description: |
+        Создать новый вопрос в опросе.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Текст вопроса
+                question_type:
+                  type: string
+                  description: "Тип вопроса: **text_field** - Ответ текстом, **radio** - Ответ с выбором одного варианта, **check_boxes** - Ответ с выбором нескольких вариантов"
+
+                questionnaire:
+                  type: number
+                  description: ID опроса
+      responses:
+        200:
+          description: 'Новый вопрос'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  text:
+                    type: string
+                  question_type:
+                    type: string
+                  questionnaire:
+                    type: number
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+
+      security:
+        - token:
+            - admin
+  /api/questionnaire/<questionnaire_id>/questions/<questions_id>/:
+    parameters:
+      - name: questionnaire_id
+        in: path
+        required: true
+        description: ID опроса
+        schema:
+          type: number
+      - name: questions_id
+        in: path
+        required: true
+        description: ID вопроса
+        schema:
+          type: number
+    put:
+      tags:
+        - QUESTIONS
+      description: |
+        Изменить вопрос.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Текст вопроса
+                question_type:
+                  type: string
+                  description: "Тип вопроса: **text_field** - Ответ текстом, **radio** - Ответ с выбором одного варианта, **check_boxes** - Ответ с выбором нескольких вариантов"
+
+                questionnaire:
+                  type: number
+                  description: ID опроса
+      responses:
+        200:
+          description: 'Измененный вопрос'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    text:
+                      type: string
+                    question_type:
+                      type: string
+                    questionnaire:
+                      type: number
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+        - token:
+            - admin
+    delete:
+      tags:
+        - QUESTIONS
+      description: |
+        Удалить вопрос.
+
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+      responses:
+        200:
+          description: 'Удаленный вопрос'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    text:
+                      type: string
+                    question_type:
+                      type: string
+                    questionnaire:
+                      type: number
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+        - token:
+            - admin
+
+  /api/questionnaire/<questionnaire_id>/questions/<questions_id>/choices/:
+    get:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+      tags:
+        - CHOICES
+      description: |
+        Получить список всех вариантов ответа в вопросе.
+
+      responses:
+        200:
+          description: Список вариантов ответа в вопросе
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    question:
+                      type: number
+
+    post:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+      tags:
+        - CHOICES
+      description: |
+        Создать вариант ответа в вопросе.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description:  Вариант ответа
+                question:
+                  type: number
+                  description: ID вопроса
+      responses:
+        200:
+          description: 'Новый вариант ответа в вопросе'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  question:
+                    type: number
+
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+
+      security:
+        - token:
+            - admin
+  /api/questionnaire/<questionnaire_id>/question/<questions_id>/choices/<choices_id>/:
+
+    put:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+        - name: choices_id
+          in: path
+          required: true
+          description: ID варианта ответа
+          schema:
+            type: number
+      tags:
+        - CHOICES
+      description: |
+        Изменить вариант ответа.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Вариант ответа
+                question:
+                  type: number
+                  description: ID вопроса
+      responses:
+        200:
+          description: 'Измененный вариант ответа'
+          content:
+            application/json:
+              schema:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    name:
+                      type: string
+                    question:
+                      type: number
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+        - token:
+            - admin
+    delete:
+      tags:
+        - CHOICES
+      description: |
+        Удалить вариант ответа.
+
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+        - name: choices_id
+          in: path
+          required: true
+          description: ID варианта ответа
+          schema:
+            type: number
+      responses:
+        200:
+          description: 'Удаленный вариант ответа'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  question:
+                    type: number
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+        403:
+          description: У вас недостаточно прав для выполнения данного действия
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "У вас недостаточно прав для выполнения данного действия"
+      security:
+        - token:
+            - admin
+
+
+  /api/answers/:
+    get:
+      tags:
+        - ANSWERS
+      description: |
+        Получить список пройденных опросов с ответами на вопросы.
+
+      responses:
+        200:
+          description: список пройденных опросов с ответами на вопросы
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    questions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          text:
+                            type: string
+                          answers:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: number
+                                self_text:
+                                  type: string
+                                author:
+                                  type: number
+                                question:
+                                  type: number
+                                one_choice:
+                                  type: number
+                                many_choice:
+                                  type: array
+                                  items:
+                                    type: number
+                    name:
+                      type: string
+                    date_start:
+                      type: date
+                    date_end:
+                      type: date
+                    description:
+                      type: string
+      security:
+        - token:
+            - admin
+            - user
+  /api/questionnaire/<questionnaire_id>/questions/<questions_id>/answers/:
+    post:
+      parameters:
+        - name: questionnaire_id
+          in: path
+          required: true
+          description: ID опроса
+          schema:
+            type: number
+        - name: questions_id
+          in: path
+          required: true
+          description: ID вопроса
+          schema:
+            type: number
+      tags:
+        - ANSWERS
+      description: |
+        Ответить на вопрос.
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                self_text:
+                  type: string
+                  description:  Ответ текстом. **Если в вопросе тип - text_field**
+                many_choice:
+                  type: number
+                  description: Ответ с выбором нескольких вариантов (выбирать из модели choices). **Если в вопросе тип - check_boxes**
+                one_choice:
+                  type: number
+                  description: Ответ с выбором одного варианта (выбирать из модели choices). **Если в вопросе тип - radio**
+
+      responses:
+        200:
+          description: 'Новый вариант ответа в вопросе'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  name:
+                    type: string
+                  question:
+                    type: number
+
+        401:
+          description: Учетные данные не были предоставлены/Недопустимый токен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    detail:
+                      type: string
+                      example: "Учетные данные не были предоставлены/Недопустимый токен"
+
+      security:
+        - token:
+            - admin
+            - user
+
+
+components:
+  securitySchemes:
+    token:
+      type: apiKey
+      name: Token
+      in: header

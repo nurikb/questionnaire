@@ -17,7 +17,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ['id', 'name']
+        fields = '__all__'
         model = Choice
 
 
