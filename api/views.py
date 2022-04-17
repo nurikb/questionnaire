@@ -6,6 +6,7 @@ from .models import Questionnaire, Choice, Question, Answer
 from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSerializer, AnswerOneTextSerializer, \
     AnswerOneChoiceSerializer, AnswerMultipleChoiceSerializer, AnswerSerializer, UserQuestionnaireSerializer, \
     AdminQuestionnaireSerializer
+from django.db.models import Q
 
 
 class PermissionMixin:
@@ -86,8 +87,17 @@ class AnswerCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
 
 
 class UserIdQuestionnaireListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Questionnaire.objects.all()
+    # queryset = Questionnaire.objects.all()
     permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        if self.request.user.is_staff:
+            queryset = Questionnaire.objects.exclude(~Q(questions__answers__author__id__isnull=False))
+        else:
+            queryset = Questionnaire.objects.exclude(~Q(questions__answers__author__id=user_id))
+        print(queryset)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.user.is_staff:
