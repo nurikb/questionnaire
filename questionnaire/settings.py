@@ -146,6 +146,8 @@ REST_FRAMEWORK = {
     ),
 }
 
+APPEND_SLASH = False
+
 QUESTION_TYPES = (
     ('text_field', 'Ответ текстом'),
     ('radio', 'Ответ с выбором одного варианта'),

@@ -21,15 +21,15 @@ class ChoiceSerializer(serializers.ModelSerializer):
         model = Choice
 
 
-# ответы пользователей
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Answer
 
 
-# вопросы с ответами пользователей
 class QuestionListSerializer(serializers.ModelSerializer):
+    """Вопросы с ответами пользователя"""
+
     answers = serializers.SerializerMethodField('get_answers')
 
     class Meta:
@@ -37,7 +37,6 @@ class QuestionListSerializer(serializers.ModelSerializer):
         model = Question
 
     def get_answers(self, question):
-        # author_id = self.context.get('request').parser_context['kwargs']['id']
         author_id = self.context.get('request').user.id
         answers = Answer.objects.filter(
             Q(question=question) & Q(author__id=author_id))
@@ -45,8 +44,9 @@ class QuestionListSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-# опросы с вопросами и ответами пользователей
 class UserQuestionnaireSerializer(serializers.ModelSerializer):
+    """Опросы с вопросами и ответами пользователя"""
+
     questions = QuestionListSerializer(read_only=True, many=True)
 
     class Meta:
@@ -54,8 +54,34 @@ class UserQuestionnaireSerializer(serializers.ModelSerializer):
         model = Questionnaire
 
 
-# ответ своим текстом
+class AdminQuestionListSerializer(serializers.ModelSerializer):
+    """Вопросы с ответами всех пользователей"""
+
+    answers = serializers.SerializerMethodField('get_answers')
+
+    class Meta:
+        fields = ['text', 'answers']
+        model = Question
+
+    def get_answers(self, question):
+        answers = Answer.objects.filter(question=question)
+        serializer = AnswerSerializer(instance=answers, many=True)
+        return serializer.data
+
+
+class AdminQuestionnaireSerializer(serializers.ModelSerializer):
+    """Опросы с вопросами и ответами всех пользователей"""
+
+    questions = AdminQuestionListSerializer(read_only=True, many=True)
+
+    class Meta:
+        fields = '__all__'
+        model = Questionnaire
+
+
 class AnswerOneTextSerializer(serializers.ModelSerializer):
+    """Ответ своим текстом"""
+
     class Meta:
         fields = ['self_text']
         model = Answer
@@ -63,9 +89,10 @@ class AnswerOneTextSerializer(serializers.ModelSerializer):
 
 class UserFilteredPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
     def get_queryset(self):
-        question_id = self.context.get('request').parser_context['kwargs'][
-            'question_pk']
         request = self.context.get('request', None)
+        question_id = request.parser_context['kwargs'][
+            'question_pk']
+
         queryset = super(UserFilteredPrimaryKeyRelatedField,
                          self).get_queryset()
         if not request or not queryset:
@@ -73,8 +100,9 @@ class UserFilteredPrimaryKeyRelatedField(serializers.PrimaryKeyRelatedField):
         return queryset.filter(question_id=question_id)
 
 
-# ответ выбором одного варианта
 class AnswerOneChoiceSerializer(serializers.ModelSerializer):
+    """Ответ с выбором одного варианта"""
+
     one_choice = UserFilteredPrimaryKeyRelatedField(
         many=False,
         queryset=Choice.objects.all()
@@ -85,8 +113,9 @@ class AnswerOneChoiceSerializer(serializers.ModelSerializer):
         model = Answer
 
 
-# ответ выбором нескольких вариантов
 class AnswerMultipleChoiceSerializer(serializers.ModelSerializer):
+    """Ответ с выбором нескольких вариантов"""
+
     many_choice = UserFilteredPrimaryKeyRelatedField(
         many=True,
         queryset=Choice.objects.all()

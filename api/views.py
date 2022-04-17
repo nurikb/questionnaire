@@ -1,10 +1,11 @@
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.generics import get_object_or_404
+
 from .models import Questionnaire, Choice, Question, Answer
 from .serializers import QuestionnaireSerializer, QuestionSerializer, ChoiceSerializer, AnswerOneTextSerializer, \
-    AnswerOneChoiceSerializer, AnswerMultipleChoiceSerializer, AnswerSerializer, UserQuestionnaireSerializer
-from django.db.models import Q
+    AnswerOneChoiceSerializer, AnswerMultipleChoiceSerializer, AnswerSerializer, UserQuestionnaireSerializer, \
+    AdminQuestionnaireSerializer
 
 
 class PermissionMixin:
@@ -13,7 +14,7 @@ class PermissionMixin:
 
     def get_permissions(self):
         if self.action in ['list']:
-            self.permission_classes = [AllowAny, ]
+            self.permission_classes = [IsAuthenticated, ]
         elif self.action in ['create', 'destroy', 'update']:
             self.permission_classes = [IsAdminUser, ]
         return super().get_permissions()
@@ -78,16 +79,19 @@ class AnswerCreateViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             pk=self.kwargs['question_pk'],
             questionnaire__id=self.kwargs['id'],
         )
+        answer = Answer.objects.filter(author=self.request.user, question=question).exists()
+        print(answer)
+        # if not answer:
         serializer.save(author=self.request.user, question=question)
 
 
 class UserIdQuestionnaireListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    serializer_class = UserQuestionnaireSerializer
+    queryset = Questionnaire.objects.all()
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
-        user_id = self.request.user.id
-        queryset = Questionnaire.objects.exclude(~Q(questions__answers__author__id=user_id))
-        return queryset
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return AdminQuestionnaireSerializer
+        return UserQuestionnaireSerializer
 
 

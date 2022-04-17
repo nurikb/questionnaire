@@ -22,7 +22,7 @@ router.register(
     basename='answers'
 )
 router.register(
-    'my_polls',
+    'answers',
     UserIdQuestionnaireListViewSet,
     basename='list_userid_polls'
 )
